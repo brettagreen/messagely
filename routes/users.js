@@ -11,19 +11,18 @@ const { ensureLoggedIn, ensureCorrectUser } = require('../middleware/auth');
  **/
 router.get('/', ensureLoggedIn, async function (req, res, next) {
     try {
+        const users = await User.all();
 
-        const results = await User.all();
-
-        if (results.length === 0) {
+        if (!users) {
             throw new ExpressError("OOOOOPSSSSSSSIES! no data for you (no soup for you reference)");
         }
 
         const resultsArray = [];
         let json;
 
-        for (let x = 0; x < results.length; x++) {
-            json = {username: results[x].username, first_name: results[x].first_name, last_name: results[x].last_name,
-                phone: results[x].phone }
+        for (let x = 0; x < users.length; x++) {
+            json = {username: users[x].username, first_name: users[x].first_name, last_name: users[x].last_name,
+                phone: users[x].phone }
             resultsArray.push(json);
         }
         return res.json({users: resultsArray});
@@ -40,11 +39,14 @@ router.get('/', ensureLoggedIn, async function (req, res, next) {
  **/
 router.get('/:username', ensureCorrectUser, async function (req, res, next) {
     try {
-        const result = await User.get(req.params.username);
+        const user = await User.get(req.params.username);
 
-        if (result.length === 0) {
+        if (!user) {
             throw new ExpressError("OOOOOPSSSSSSSIES! no data for you (no soup for you reference)");
         }
+
+        const result = {username: user.username, first_name: user.first_name, last_name: user.last_name,
+            phone: user.phone, join_at: user.join_at, last_login_at: user.last_login_at}
 
         return res.json({user: result});
     } catch (err) {
@@ -64,12 +66,20 @@ router.get('/:username', ensureCorrectUser, async function (req, res, next) {
  **/
 router.get('/:username/to', ensureCorrectUser, async function (req, res, next) {
     try {
-        const results = await User.messagesTo(req.params.username);
+        const toMessages = await User.messagesTo(req.params.username);
 
-        if (results.length === 0) {
+        if (toMessages.length === 0) {
             throw new ExpressError("Nothing returned. try again maybe?");
         }
-        return res.json({results});
+
+        for (let x = 0; x < toMessages.length; x++) {;
+
+            toMessages[x] = {id: toMessages[x].id, from_user: { username: toMessages[x].from_user.username, first_name: toMessages[x].from_user.first_name,
+                last_name: toMessages[x].from_user.last_name, phone: toMessages[x].from_user.phone }, body: toMessages[x].body, sent_at: toMessages[x].sent_at,
+                read_at: toMessages[x].read_at};
+        }
+
+        return res.json({messages: toMessages});
     } catch (err) {
         return next(err);
     }
@@ -85,14 +95,21 @@ router.get('/:username/to', ensureCorrectUser, async function (req, res, next) {
  *
  **/
 router.get('/:username/from', ensureCorrectUser, async function (req, res, next) {
-
     try {
-        const results = await User.messagesFrom(req.params.username);
+        const fromMessages = await User.messagesFrom(req.params.username);
 
-        if (results.length === 0) {
+        if (fromMessages.length === 0) {
             throw new ExpressError("Nothing returned. try again maybe?");
         }
-        return res.json({results});
+
+        for (let x = 0; x < fromMessages.length; x++) {;
+
+            fromMessages[x] = {id: fromMessages[x].id, to_user: { username: fromMessages[x].to_user.username, first_name: fromMessages[x].to_user.first_name,
+                last_name: fromMessages[x].to_user.last_name, phone: fromMessages[x].to_user.phone }, body: fromMessages[x].body, sent_at: fromMessages[x].sent_at,
+                read_at: fromMessages[x].read_at};
+        }
+
+        return res.json({messages: fromMessages});
     } catch (err) {
         return next(err);
     }

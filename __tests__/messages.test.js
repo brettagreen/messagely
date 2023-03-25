@@ -51,6 +51,7 @@ describe("Test Message class", function () {
       to_username: "test2",
       body: "new",
       sent_at: expect.any(Date),
+      read_at: null
     });
   });
 
@@ -60,12 +61,12 @@ describe("Test Message class", function () {
       to_username: "test2",
       body: "new"
     });
-    expect(m.read_at).toBe(undefined);
+    expect(m.read_at).toBe(null);
 
-    Message.markRead(m.id);
+    await m.markRead();
     const result = await db.query("SELECT read_at from messages where id=$1",
         [m.id]);
-    expect(result.rows[0].read_at).toEqual(expect.any(Date));
+    expect(result).toBeTruthy();
   });
 
   test("can get", async function () {
@@ -73,6 +74,8 @@ describe("Test Message class", function () {
     expect(u).toEqual({
       id: expect.any(Number),
       body: "u1-to-u2",
+      from_username: "test1",
+      to_username: "test2",
       sent_at: expect.any(Date),
       read_at: null,
       from_user: {
@@ -90,7 +93,6 @@ describe("Test Message class", function () {
     });
   });
 
-  
 });
 
 

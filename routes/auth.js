@@ -16,9 +16,9 @@ router.post("/register", async function (req, res, next) {
     try {
       const vars = req.body;
 
-      const result = await User.register(vars);
+      const user = await User.register(vars);
 
-      if (!result) {
+      if (!user) {
         throw new ExpressError("Registration failed!!!!!! Try again!!!", 400);
       }
       let token = jwt.sign({username: req.body.username}, "garbageButSaidInFrench");

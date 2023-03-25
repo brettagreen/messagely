@@ -5,6 +5,14 @@ const ExpressError = require("../expressError");
 
 /** Message on the site. */
 class Message {
+  constructor(id, from_username, to_username, body, sent_at = null, read_at = null) {
+    this.id = id;
+    this.from_username = from_username;
+    this.to_username = to_username;
+    this.body = body;
+    this.sent_at = sent_at;
+    this.read_at = read_at;
+  }
 
   /** register new message -- returns
    *    {id, from_username, to_username, body, sent_at}
@@ -19,24 +27,25 @@ class Message {
             VALUES ($1, $2, $3, current_timestamp)
             RETURNING id, from_username, to_username, body, sent_at`,
         [from_username, to_username, body]);
-
-    return result.rows[0];
+    const r = result.rows[0];
+    return new Message(r.id, r.from_username, r.to_username, r.body, r.sent_at);
   }
 
   /** Update read_at for message */
-  static async markRead(id) {
+  async markRead() {
     const result = await db.query(
         `UPDATE messages
            SET read_at = current_timestamp
            WHERE id = $1
            RETURNING id, read_at`,
-        [id]);
+        [this.id]);
 
     if (!result.rows[0]) {
       throw new ExpressError(`No such message: ${id}`, 404);
     }
 
-    return result.rows[0];
+    this.read_at = result.rows[0].read_at; 
+    return true;
   }
 
   /** Get: get message by id
@@ -66,31 +75,32 @@ class Message {
           WHERE m.id = $1`,
         [id]);
     
-    let m = result.rows[0];
+    const r = result.rows[0];
+    let m = new Message(r.id, r.from_username, r.to_username, r.body, r.sent_at);
 
     if (!m) {
       throw new ExpressError(`No such message: ${id}`, 404);
     }
 
-    return {
-      id: m.id,
-      from_user: {
-        username: m.from_username,
-        first_name: m.from_first_name,
-        last_name: m.from_last_name,
-        phone: m.from_phone,
-      },
-      to_user: {
-        username: m.to_username,
-        first_name: m.to_first_name,
-        last_name: m.to_last_name,
-        phone: m.to_phone,
-      },
-      body: m.body,
-      sent_at: m.sent_at,
-      read_at: m.read_at,
+    const from_user = {
+        username: r.from_username,
+        first_name: r.from_first_name,
+        last_name: r.from_last_name,
+        phone: r.from_phone
+      };
+
+    const to_user = {
+        username: r.to_username,
+        first_name: r.to_first_name,
+        last_name: r.to_last_name,
+        phone: r.to_phone
     };
+
+    m.from_user = from_user;
+    m.to_user = to_user;
+    return m;
   }
+
 }
 
 

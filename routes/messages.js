@@ -24,11 +24,11 @@ router.get('/:id', ensureLoggedIn, async function (req, res, next) {
 
     const { id, body, sent_at, read_at, from_user, to_user } = message;
 
-    if (from_user.username !== req.user.username && to_user.username !== req.user.username) {
+    if (message.from_username !== req.user.username && message.to_username !== req.user.username) {
         return next({ status: 401, message: "Unauthorized" });
     }
 
-    return res.json({id, body, sent_at, read_at, from_user, to_user});
+    return res.json({id, body, sent_at, read_at, from_user: from_user, to_user: to_user});
 });
 
 /** POST / - post message.
@@ -44,7 +44,8 @@ router.post('/', ensureLoggedIn, async function (req, res, next) {
         throw new ExpressError("unable to create new message", 400);
     }
 
-    return res.status(201).json({message: message});
+    return res.status(201).json({message: {id: message.id, from_username: message.from_username, to_username: message.to_username,
+        body: message.body, sent_at: message.sent_at}});
  });
 
 /** POST/:id/read - mark message as read:
@@ -55,14 +56,16 @@ router.post('/', ensureLoggedIn, async function (req, res, next) {
  *
  **/
 router.post('/:id/read', async function (req, res, next) {
-    const { to_user } = await Message.get(req.params.id);
+    const message = await Message.get(req.params.id);
 
-    if (to_user.username === req.user.username) {
-        const result = await Message.markRead(req.params.id);
-        if (!result) {
+    if (message.to_username === req.user.username) {
+        await message.markRead();
+        if (!message.read_at) {
             throw new ExpressError("unable to update 'read_at'", 400);
         }
-        return res.json({message: result});
+        return res.json({message: {id: message.id, read_at: message.read_at}});
+    } else {
+        throw new ExpressError("unauthorized", 401);
     }
 });
 

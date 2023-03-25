@@ -28,10 +28,8 @@ function ensureLoggedIn(req, res, next) {
 function ensureCorrectUser(req, res, next) {
   try {
     if (req.user.username === req.params.username) {
-      console.log("THEY MATCH");
       return next();
     } else {
-      console.log("THEY DO NOT MATCH");
       throw new ExpressError("Unauthorized", 401);
     }
   } catch (err) {

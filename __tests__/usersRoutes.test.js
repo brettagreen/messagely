@@ -124,7 +124,7 @@ describe('GET /users/:username/to', function() {
         token: u2Token
       });
 
-      expect(response.body).toEqual({results:[{
+      expect(response.body).toEqual({messages:[{
         id: expect.any(Number),
         from_user: {
           username: "thebagman",
@@ -156,7 +156,7 @@ describe('GET /users/:username/from', function() {
         token: u2Token
       });
 
-      expect(response.body).toEqual({results:[{
+      expect(response.body).toEqual({messages:[{
         id: expect.any(Number),
         to_user: {
           username: "thebagman",
